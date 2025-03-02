@@ -1,11 +1,11 @@
-
 export enum Source {
   Documentation = 'documentation',
   Community = 'community',
   Blog = 'blog',
   DevSite = 'devsite',
   NowCreate = 'nowcreate',
-  GitHub = 'github'
+  GitHub = 'github',
+  YouTube = 'youtube'
 }
 
 export enum Category {

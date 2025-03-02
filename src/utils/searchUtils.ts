@@ -159,6 +159,8 @@ export const getSourceInfo = (source: Source): { name: string; color: string } =
       return { name: 'Now Create', color: 'bg-red-100 text-red-800' };
     case Source.GitHub:
       return { name: 'GitHub', color: 'bg-gray-100 text-gray-800' };
+    case Source.YouTube:
+      return { name: 'YouTube', color: 'bg-red-100 text-red-800' };
     default:
       return { name: 'Unknown', color: 'bg-gray-100 text-gray-800' };
   }

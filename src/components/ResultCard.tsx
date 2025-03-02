@@ -3,32 +3,50 @@ import React, { useState } from 'react';
 import { SearchResult } from '../types/search';
 import { getSourceInfo } from '../utils/searchUtils';
 import CategoryChip from './CategoryChip';
-import { BookmarkIcon, ShareIcon, ExternalLinkIcon } from 'lucide-react';
+import { BookmarkIcon, ShareIcon, ExternalLinkIcon, LockIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ResultCardProps {
   result: SearchResult;
   index: number;
+  isLoggedIn: boolean;
+  onLoginRequired: () => void;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({ result, index }) => {
+const ResultCard: React.FC<ResultCardProps> = ({ result, index, isLoggedIn, onLoginRequired }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const sourceInfo = getSourceInfo(result.source);
+  const isLoginRequired = result.source === 'nowcreate' && !isLoggedIn;
   
   // Calculate animation delay based on index
   const delay = `${0.1 + index * 0.05}s`;
+
+  const handleViewClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isLoginRequired) {
+      event.preventDefault();
+      onLoginRequired();
+    }
+  };
 
   return (
     <div 
       className={cn(
         "relative bg-white rounded-lg border overflow-hidden hover-lift group",
-        "opacity-0 animate-staggered-enter"
+        "opacity-0 animate-staggered-enter",
+        isLoginRequired ? "border-yellow-300" : ""
       )}
       style={{ '--animation-delay': delay } as React.CSSProperties}
     >
       {result.isPredefined && (
         <div className="absolute top-0 right-0 bg-servicenow-blue text-white px-2 py-1 text-xs font-medium rounded-bl">
           Verified Answer
+        </div>
+      )}
+      
+      {isLoginRequired && (
+        <div className="absolute top-0 right-0 bg-yellow-500 text-white px-2 py-1 text-xs font-medium rounded-bl flex items-center">
+          <LockIcon size={12} className="mr-1" />
+          Login Required
         </div>
       )}
       
@@ -56,7 +74,12 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index }) => {
           </button>
         </div>
         
-        <p className="text-gray-600 mb-4 line-clamp-3">{result.snippet}</p>
+        <p className="text-gray-600 mb-4 line-clamp-3">
+          {isLoginRequired 
+            ? `${result.snippet.substring(0, 100)}... (Login required to view full content)`
+            : result.snippet
+          }
+        </p>
         
         <div className="flex flex-wrap gap-2 mb-4">
           {result.categories.map((category, idx) => (
@@ -65,14 +88,24 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index }) => {
         </div>
         
         <div className="flex justify-between items-center mt-auto pt-2 border-t">
-          <a 
-            href={result.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-servicenow-blue hover:text-servicenow-darkblue text-sm font-medium inline-flex items-center transition-colors"
-          >
-            View Full Article <ExternalLinkIcon size={14} className="ml-1" />
-          </a>
+          {isLoginRequired ? (
+            <button
+              onClick={onLoginRequired}
+              className="text-servicenow-blue hover:text-servicenow-darkblue text-sm font-medium inline-flex items-center transition-colors"
+            >
+              Login to View <LockIcon size={14} className="ml-1" />
+            </button>
+          ) : (
+            <a 
+              href={result.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-servicenow-blue hover:text-servicenow-darkblue text-sm font-medium inline-flex items-center transition-colors"
+              onClick={handleViewClick}
+            >
+              View Full Article <ExternalLinkIcon size={14} className="ml-1" />
+            </a>
+          )}
           
           <button 
             className="p-2 text-gray-500 hover:text-servicenow-blue rounded-full hover:bg-gray-100 transition-colors"

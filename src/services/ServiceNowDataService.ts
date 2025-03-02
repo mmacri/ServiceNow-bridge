@@ -1,4 +1,3 @@
-
 import { SearchResult, Source, Category } from '../types/search';
 
 /**
@@ -8,6 +7,8 @@ export class ServiceNowDataService {
   private static instance: ServiceNowDataService;
   private cache: Map<string, { results: SearchResult[], timestamp: number }> = new Map();
   private cacheDuration = 1000 * 60 * 30; // 30 minutes cache
+  private userLoggedIn: boolean = false;
+  private sessionToken: string | null = null;
 
   private constructor() {}
 
@@ -16,6 +17,22 @@ export class ServiceNowDataService {
       ServiceNowDataService.instance = new ServiceNowDataService();
     }
     return ServiceNowDataService.instance;
+  }
+
+  /**
+   * Set user login status and session token for authenticated requests
+   */
+  public setAuth(loggedIn: boolean, token: string | null = null): void {
+    this.userLoggedIn = loggedIn;
+    this.sessionToken = token;
+    console.log(`Auth status updated: ${loggedIn ? 'Logged in' : 'Logged out'}`);
+  }
+
+  /**
+   * Check if user is logged in
+   */
+  public isLoggedIn(): boolean {
+    return this.userLoggedIn;
   }
 
   /**
@@ -36,29 +53,36 @@ export class ServiceNowDataService {
 
     console.log('Fetching fresh results for:', query);
 
-    // Fetch from all sources in parallel
-    const results = await Promise.all([
-      this.searchDocumentation(query),
-      this.searchCommunity(query),
-      this.searchDeveloperSite(query),
-      this.searchBlog(query),
-      this.searchGitHub(query)
-    ]);
+    try {
+      // Fetch from all sources in parallel
+      const results = await Promise.all([
+        this.searchDocumentation(query),
+        this.searchCommunity(query),
+        this.searchDeveloperSite(query),
+        this.searchBlog(query),
+        this.searchYouTube(query),
+        this.searchGitHub(query),
+        this.searchNowCreate(query)
+      ]);
 
-    // Flatten and sort results
-    const allResults = results.flat().sort((a, b) => {
-      // First, sort by predefined solutions (they should come first)
-      if (a.isPredefined && !b.isPredefined) return -1;
-      if (!a.isPredefined && b.isPredefined) return 1;
+      // Flatten and sort results
+      const allResults = results.flat().sort((a, b) => {
+        // First, sort by predefined solutions (they should come first)
+        if (a.isPredefined && !b.isPredefined) return -1;
+        if (!a.isPredefined && b.isPredefined) return 1;
+        
+        // Then sort by relevance score (if available)
+        return 0;
+      });
+
+      // Cache the results
+      this.cacheResults(cacheKey, allResults);
       
-      // Then sort by relevance score (if available)
-      return 0;
-    });
-
-    // Cache the results
-    this.cacheResults(cacheKey, allResults);
-    
-    return allResults;
+      return allResults;
+    } catch (error) {
+      console.error('Error searching all sources:', error);
+      throw new Error('Failed to search ServiceNow knowledge sources');
+    }
   }
 
   /**
@@ -66,15 +90,34 @@ export class ServiceNowDataService {
    */
   private async searchDocumentation(query: string): Promise<SearchResult[]> {
     try {
-      // In a real implementation, we would fetch from the docs.servicenow.com
-      // Here we're simulating the API call and response
-      const response = await this.simulateApiCall(
-        `https://docs.servicenow.com/search?q=${encodeURIComponent(query)}`,
-        1000
-      );
+      // In a real implementation, we need to use a proxy or a service that handles CORS
+      // For docs.servicenow.com, construct a search URL
+      const searchUrl = `https://cors-anywhere.herokuapp.com/https://docs.servicenow.com/search?q=${encodeURIComponent(query)}`;
       
-      // Parse and transform the results
-      return response.slice(0, 3).map((item: any, index: number) => ({
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': window.location.origin
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching documentation: ${response.status}`);
+      }
+
+      // Parse the HTML response to extract search results
+      const html = await response.text();
+      
+      // This is a simplified example - in a real implementation, we would need
+      // proper HTML parsing to extract search results
+      const results: SearchResult[] = [];
+      
+      // Extract search results from HTML using regex or DOM parsing
+      // This is a placeholder for the actual implementation
+      const resultItems = this.extractDocumentationResults(html);
+      
+      return resultItems.map((item, index) => ({
         id: `docs-${Date.now()}-${index}`,
         title: item.title,
         snippet: item.snippet,
@@ -94,13 +137,25 @@ export class ServiceNowDataService {
    */
   private async searchCommunity(query: string): Promise<SearchResult[]> {
     try {
-      // Simulate community search
-      const response = await this.simulateApiCall(
-        `https://community.servicenow.com/search?q=${encodeURIComponent(query)}`,
-        1200
-      );
+      // Similar to documentation search, but for community.servicenow.com
+      const searchUrl = `https://cors-anywhere.herokuapp.com/https://community.servicenow.com/community?id=community_search&q=${encodeURIComponent(query)}`;
       
-      return response.slice(0, 2).map((item: any, index: number) => ({
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': window.location.origin
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching community: ${response.status}`);
+      }
+
+      const html = await response.text();
+      const resultItems = this.extractCommunityResults(html);
+      
+      return resultItems.map((item, index) => ({
         id: `community-${Date.now()}-${index}`,
         title: item.title,
         snippet: item.snippet,
@@ -120,13 +175,25 @@ export class ServiceNowDataService {
    */
   private async searchDeveloperSite(query: string): Promise<SearchResult[]> {
     try {
-      // Simulate developer site search
-      const response = await this.simulateApiCall(
-        `https://developer.servicenow.com/search?q=${encodeURIComponent(query)}`,
-        800
-      );
+      // For developer.servicenow.com
+      const searchUrl = `https://cors-anywhere.herokuapp.com/https://developer.servicenow.com/dev.do#!/search?q=${encodeURIComponent(query)}`;
       
-      return response.slice(0, 2).map((item: any, index: number) => ({
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': window.location.origin
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching developer site: ${response.status}`);
+      }
+
+      const html = await response.text();
+      const resultItems = this.extractDeveloperResults(html);
+      
+      return resultItems.map((item, index) => ({
         id: `dev-${Date.now()}-${index}`,
         title: item.title,
         snippet: item.snippet,
@@ -146,13 +213,26 @@ export class ServiceNowDataService {
    */
   private async searchBlog(query: string): Promise<SearchResult[]> {
     try {
-      // Simulate blog search
-      const response = await this.simulateApiCall(
-        `https://blogs.servicenow.com/search?q=${encodeURIComponent(query)}`,
-        700
-      );
+      // For blogs.servicenow.com
+      // Some blog platforms offer RSS feeds which could be used
+      const searchUrl = `https://cors-anywhere.herokuapp.com/https://blogs.servicenow.com/?s=${encodeURIComponent(query)}`;
       
-      return response.slice(0, 2).map((item: any, index: number) => ({
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': window.location.origin
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching blog: ${response.status}`);
+      }
+
+      const html = await response.text();
+      const resultItems = this.extractBlogResults(html);
+      
+      return resultItems.map((item, index) => ({
         id: `blog-${Date.now()}-${index}`,
         title: item.title,
         snippet: item.snippet,
@@ -168,21 +248,52 @@ export class ServiceNowDataService {
   }
 
   /**
+   * Search YouTube for ServiceNow related videos
+   */
+  private async searchYouTube(query: string): Promise<SearchResult[]> {
+    try {
+      // Use YouTube Data API
+      // Note: In a real implementation, you would need a YouTube API key
+      const apiKey = 'YOUR_YOUTUBE_API_KEY'; // This should be stored securely
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=ServiceNow+${encodeURIComponent(query)}&type=video&key=${apiKey}`;
+      
+      // For demonstration, we'll use a placeholder response
+      // In a real implementation, you would make the actual API call
+      return []; // Return empty for now since we don't have an actual API key
+    } catch (error) {
+      console.error('Error searching YouTube:', error);
+      return [];
+    }
+  }
+
+  /**
    * Search GitHub for ServiceNow repositories
    */
   private async searchGitHub(query: string): Promise<SearchResult[]> {
     try {
-      // In a real implementation, use GitHub's API with authentication
-      const response = await this.simulateApiCall(
-        `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+servicenow`,
-        1500
-      );
+      // Use GitHub's API with authentication for higher rate limits
+      const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+servicenow`;
       
-      return response.slice(0, 1).map((item: any, index: number) => ({
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          // Add authorization if needed for higher rate limits
+          // 'Authorization': `token ${githubToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching GitHub: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return data.items.slice(0, 5).map((item: any, index: number) => ({
         id: `github-${Date.now()}-${index}`,
-        title: item.title,
-        snippet: item.snippet,
-        url: item.url,
+        title: item.name,
+        snippet: item.description || 'No description available',
+        url: item.html_url,
         source: Source.GitHub,
         categories: [
           { type: Category.Persona, name: 'Developer' },
@@ -197,8 +308,125 @@ export class ServiceNowDataService {
   }
 
   /**
-   * Extract categories from content using simple keyword matching
-   * In a real implementation, NLP or ML would be used for better classification
+   * Search ServiceNow Now Create site (requires login)
+   */
+  private async searchNowCreate(query: string): Promise<SearchResult[]> {
+    // Now Create typically requires login
+    if (!this.userLoggedIn) {
+      console.log('User not logged in, skipping Now Create search');
+      return [];
+    }
+
+    try {
+      // This would need the actual login session token
+      const searchUrl = `https://cors-anywhere.herokuapp.com/https://create.servicenow.com/search?q=${encodeURIComponent(query)}`;
+      
+      const response = await fetch(searchUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Origin': window.location.origin,
+          'Authorization': `Bearer ${this.sessionToken}` // Use the session token
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          // Token might be expired or invalid
+          this.setAuth(false, null);
+          return [];
+        }
+        throw new Error(`Error fetching Now Create: ${response.status}`);
+      }
+
+      const html = await response.text();
+      const resultItems = this.extractNowCreateResults(html);
+      
+      return resultItems.map((item, index) => ({
+        id: `nowcreate-${Date.now()}-${index}`,
+        title: item.title,
+        snippet: item.snippet,
+        url: item.url,
+        source: Source.NowCreate,
+        categories: this.extractCategories(item.title, item.snippet),
+        isPredefined: false
+      }));
+    } catch (error) {
+      console.error('Error searching Now Create:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Handle ServiceNow login
+   */
+  public async login(username: string, password: string): Promise<boolean> {
+    try {
+      // In a real implementation, this would make an OAuth request to ServiceNow
+      // For now, we'll simulate a successful login
+      console.log('Logging in with credentials:', username);
+      
+      // Simulate successful login
+      this.setAuth(true, 'fake-session-token');
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Logout from ServiceNow
+   */
+  public logout(): void {
+    this.setAuth(false, null);
+  }
+
+  /**
+   * Parse HTML to extract documentation search results
+   * This is a placeholder - real implementation would properly parse the HTML
+   */
+  private extractDocumentationResults(html: string): any[] {
+    // In a real implementation, we would use DOM parsing or regex
+    // to extract search results from the HTML
+    // For demonstration, return empty results
+    return [];
+  }
+
+  /**
+   * Parse HTML to extract community search results
+   */
+  private extractCommunityResults(html: string): any[] {
+    // Similar to documentation results extraction
+    return [];
+  }
+
+  /**
+   * Parse HTML to extract developer site search results
+   */
+  private extractDeveloperResults(html: string): any[] {
+    // Similar to documentation results extraction
+    return [];
+  }
+
+  /**
+   * Parse HTML to extract blog search results
+   */
+  private extractBlogResults(html: string): any[] {
+    // Similar to documentation results extraction
+    return [];
+  }
+
+  /**
+   * Parse HTML to extract Now Create search results
+   */
+  private extractNowCreateResults(html: string): any[] {
+    // Similar to documentation results extraction
+    return [];
+  }
+
+  /**
+   * Extract categories from content using keyword matching
    */
   private extractCategories(title: string, snippet: string, isDeveloper = false): { type: Category, name: string }[] {
     const text = (title + ' ' + snippet).toLowerCase();
@@ -256,170 +484,6 @@ export class ServiceNowDataService {
   }
 
   /**
-   * Simulate an API call with mock data
-   * In a real implementation, this would make actual HTTP requests
-   */
-  private simulateApiCall(url: string, delay: number): Promise<any[]> {
-    console.log(`Simulating API call to: ${url}`);
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const urlLower = url.toLowerCase();
-        const query = url.split('q=')[1]?.split('&')[0] || '';
-        const decodedQuery = decodeURIComponent(query).toLowerCase();
-        
-        // Generate mock results based on the query and source
-        let results = [];
-        
-        if (urlLower.includes('docs.servicenow.com')) {
-          results = this.generateDocumentationResults(decodedQuery);
-        } else if (urlLower.includes('community.servicenow.com')) {
-          results = this.generateCommunityResults(decodedQuery);
-        } else if (urlLower.includes('developer.servicenow.com')) {
-          results = this.generateDeveloperResults(decodedQuery);
-        } else if (urlLower.includes('blogs.servicenow.com')) {
-          results = this.generateBlogResults(decodedQuery);
-        } else if (urlLower.includes('api.github.com')) {
-          results = this.generateGitHubResults(decodedQuery);
-        }
-        
-        resolve(results);
-      }, delay);
-    });
-  }
-
-  /**
-   * Generate mock documentation results
-   */
-  private generateDocumentationResults(query: string): any[] {
-    const results = [
-      {
-        title: `Using ${this.capitalizeFirstLetter(query)} in ServiceNow`,
-        snippet: `This article provides a comprehensive guide to ${query} functionality in ServiceNow. Learn best practices and implementation strategies.`,
-        url: `https://docs.servicenow.com/bundle/tokyo-platform-administration/page/administer/${query.replace(/\s+/g, '-')}.html`
-      },
-      {
-        title: `${this.capitalizeFirstLetter(query)} Configuration Guide`,
-        snippet: `Step-by-step instructions for configuring ${query} in your ServiceNow instance. Includes permissions, setup, and common issues.`,
-        url: `https://docs.servicenow.com/bundle/tokyo-platform-administration/page/administer/configuration/${query.replace(/\s+/g, '-')}-guide.html`
-      },
-      {
-        title: `ServiceNow ${this.capitalizeFirstLetter(query)} API Reference`,
-        snippet: `Complete API reference for ${query} functionality in ServiceNow. Includes endpoints, parameters, and example requests.`,
-        url: `https://docs.servicenow.com/bundle/tokyo-application-development/page/integrate/api-reference/${query.replace(/\s+/g, '-')}-api.html`
-      },
-      {
-        title: `Troubleshooting ${this.capitalizeFirstLetter(query)} Issues`,
-        snippet: `Common issues and solutions when working with ${query} in ServiceNow. Includes error messages and debugging tips.`,
-        url: `https://docs.servicenow.com/bundle/tokyo-platform-administration/page/administer/troubleshooting/${query.replace(/\s+/g, '-')}-troubleshooting.html`
-      }
-    ];
-    
-    // Randomize which results we return to simulate different searches
-    return this.shuffleArray(results);
-  }
-
-  /**
-   * Generate mock community results
-   */
-  private generateCommunityResults(query: string): any[] {
-    const results = [
-      {
-        title: `How do I implement ${query} in my instance?`,
-        snippet: `I'm trying to set up ${query} but running into issues with the configuration. Has anyone successfully implemented this? Any tips or best practices would be appreciated.`,
-        url: `https://community.servicenow.com/community?id=community_question&sys_id=${this.generateRandomId()}`
-      },
-      {
-        title: `Best practice for ${query} in large enterprises`,
-        snippet: `We're implementing ${query} across our global organization. Looking for advice on scaling and governance models that have worked for others.`,
-        url: `https://community.servicenow.com/community?id=community_question&sys_id=${this.generateRandomId()}`
-      },
-      {
-        title: `${this.capitalizeFirstLetter(query)} not working after Tokyo upgrade`,
-        snippet: `After upgrading to Tokyo release, our ${query} workflow stopped functioning correctly. Has anyone else experienced this issue? We've tried reverting the update but still facing problems.`,
-        url: `https://community.servicenow.com/community?id=community_question&sys_id=${this.generateRandomId()}`
-      }
-    ];
-    
-    return this.shuffleArray(results);
-  }
-
-  /**
-   * Generate mock developer site results
-   */
-  private generateDeveloperResults(query: string): any[] {
-    const results = [
-      {
-        title: `${this.capitalizeFirstLetter(query)} Script Includes and API`,
-        snippet: `Learn how to develop custom functionality for ${query} using Script Includes. This guide covers API design, best practices, and performance considerations.`,
-        url: `https://developer.servicenow.com/dev.do#!/reference/api/${query.replace(/\s+/g, '-')}`
-      },
-      {
-        title: `Building custom ${this.capitalizeFirstLetter(query)} applications`,
-        snippet: `This developer guide walks through creating a custom application that extends ${query} functionality. Includes code samples and architecture guidance.`,
-        url: `https://developer.servicenow.com/dev.do#!/guide/apps/${query.replace(/\s+/g, '-')}-app`
-      },
-      {
-        title: `${this.capitalizeFirstLetter(query)} Developer Training`,
-        snippet: `Comprehensive training module on developing ${query} solutions in ServiceNow. Covers fundamentals through advanced topics with hands-on exercises.`,
-        url: `https://developer.servicenow.com/dev.do#!/learn/courses/${query.replace(/\s+/g, '-')}-development`
-      }
-    ];
-    
-    return this.shuffleArray(results);
-  }
-
-  /**
-   * Generate mock blog results
-   */
-  private generateBlogResults(query: string): any[] {
-    const results = [
-      {
-        title: `The Future of ${this.capitalizeFirstLetter(query)} in ServiceNow`,
-        snippet: `Explore how ${query} is evolving in the ServiceNow ecosystem and what new capabilities are on the roadmap for upcoming releases.`,
-        url: `https://blogs.servicenow.com/${query.replace(/\s+/g, '-')}-future`
-      },
-      {
-        title: `Customer Success Story: ${this.capitalizeFirstLetter(query)} at Global Financial Services Firm`,
-        snippet: `Learn how a leading financial services company transformed their operations using ServiceNow ${query} to streamline processes and improve customer satisfaction.`,
-        url: `https://blogs.servicenow.com/customer-story-${query.replace(/\s+/g, '-')}`
-      },
-      {
-        title: `${this.capitalizeFirstLetter(query)} Best Practices from ServiceNow Experts`,
-        snippet: `Our team of platform experts shares their top tips and strategies for getting the most out of ${query} functionality in ServiceNow.`,
-        url: `https://blogs.servicenow.com/${query.replace(/\s+/g, '-')}-best-practices`
-      }
-    ];
-    
-    return this.shuffleArray(results);
-  }
-
-  /**
-   * Generate mock GitHub results
-   */
-  private generateGitHubResults(query: string): any[] {
-    const results = [
-      {
-        title: `servicenow-${query.replace(/\s+/g, '-')}-integration`,
-        snippet: `Open source project providing tools and utilities for ${query} integration with ServiceNow. Includes sample code, documentation, and reusable components.`,
-        url: `https://github.com/servicenow-community/servicenow-${query.replace(/\s+/g, '-')}-integration`
-      },
-      {
-        title: `awesome-servicenow-${query.replace(/\s+/g, '-')}`,
-        snippet: `A curated list of awesome resources, libraries, and tools for working with ${query} in ServiceNow. Community-maintained reference guide.`,
-        url: `https://github.com/servicenow-community/awesome-servicenow-${query.replace(/\s+/g, '-')}`
-      },
-      {
-        title: `${query.replace(/\s+/g, '-')}-servicenow-connector`,
-        snippet: `Connect ${this.capitalizeFirstLetter(query)} with ServiceNow using this open source connector. Supports bidirectional data synchronization and custom field mappings.`,
-        url: `https://github.com/integration-projects/${query.replace(/\s+/g, '-')}-servicenow-connector`
-      }
-    ];
-    
-    return this.shuffleArray(results);
-  }
-
-  /**
    * Utility to get cached results
    */
   private getCachedResults(key: string): SearchResult[] | null {
@@ -438,25 +502,6 @@ export class ServiceNowDataService {
       results,
       timestamp: Date.now()
     });
-  }
-
-  /**
-   * Utility to shuffle an array (for random mock results)
-   */
-  private shuffleArray<T>(array: T[]): T[] {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  }
-
-  /**
-   * Utility to generate a random ID for mock data
-   */
-  private generateRandomId(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 
   /**

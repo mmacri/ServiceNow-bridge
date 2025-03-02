@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchResult } from '../types/search';
 import ResultCard from './ResultCard';
+import LoginModal from './LoginModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FilterIcon } from 'lucide-react';
+import { FilterIcon, LogIn, LogOut } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 interface SearchResultsProps {
   results: SearchResult[];
   isLoading: boolean;
   query: string;
+  isLoggedIn: boolean;
+  needsLogin: boolean;
+  setNeedsLogin: (needsLogin: boolean) => void;
+  onLoginSuccess: () => void;
+  onLogout: () => void;
 }
 
-const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query }) => {
+const SearchResults: React.FC<SearchResultsProps> = ({ 
+  results, 
+  isLoading, 
+  query, 
+  isLoggedIn,
+  needsLogin,
+  setNeedsLogin,
+  onLoginSuccess,
+  onLogout
+}) => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  useEffect(() => {
+    if (needsLogin) {
+      setShowLoginModal(true);
+    }
+  }, [needsLogin]);
   
   if (isLoading) {
     return (
@@ -47,13 +70,19 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
     return null; // Don't show anything if no search has been performed yet
   }
 
-  // Group results by source type
   const predefinedResults = results.filter(result => result.isPredefined);
   const documentationResults = results.filter(result => !result.isPredefined && result.source === 'documentation');
   const communityResults = results.filter(result => !result.isPredefined && result.source === 'community');
   const developerResults = results.filter(result => !result.isPredefined && result.source === 'devsite');
   const blogResults = results.filter(result => !result.isPredefined && result.source === 'blog');
   const githubResults = results.filter(result => !result.isPredefined && result.source === 'github');
+  const nowCreateResults = results.filter(result => !result.isPredefined && result.source === 'nowcreate');
+  const youtubeResults = results.filter(result => !result.isPredefined && result.source === 'youtube');
+
+  const handleCloseLoginModal = () => {
+    setShowLoginModal(false);
+    setNeedsLogin(false);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-8 animate-fade-in">
@@ -63,7 +92,29 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
         </h2>
         
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Filter by:</span>
+          {isLoggedIn ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onLogout}
+              className="text-sm font-medium text-gray-700 flex items-center"
+            >
+              <LogOut size={16} className="mr-1" />
+              <span>Logout</span>
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowLoginModal(true)}
+              className="text-sm font-medium text-gray-700 flex items-center"
+            >
+              <LogIn size={16} className="mr-1" />
+              <span>Login for More Results</span>
+            </Button>
+          )}
+          
+          <span className="text-sm text-gray-500 ml-2">Filter by:</span>
           <div className="relative inline-block">
             <button className="p-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 flex items-center">
               <FilterIcon size={16} className="mr-1" />
@@ -73,7 +124,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
         </div>
       </div>
       
-      {/* Display verified answers at the top if any are found */}
       {predefinedResults.length > 0 && (
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
@@ -82,7 +132,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             {predefinedResults.map((result, index) => (
-              <ResultCard key={result.id} result={result} index={index} />
+              <ResultCard 
+                key={result.id} 
+                result={result} 
+                index={index} 
+                isLoggedIn={isLoggedIn}
+                onLoginRequired={() => setNeedsLogin(true)}
+              />
             ))}
           </div>
         </div>
@@ -97,9 +153,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
-          {/* Results grouped by source */}
-          
-          {/* Documentation Results */}
           {documentationResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -107,13 +160,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {documentationResults.map((result, index) => (
-                  <ResultCard key={result.id} result={result} index={index} />
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index} 
+                    isLoggedIn={isLoggedIn}
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
                 ))}
               </div>
             </div>
           )}
           
-          {/* Community Results */}
           {communityResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -121,13 +179,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {communityResults.map((result, index) => (
-                  <ResultCard key={result.id} result={result} index={index} />
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index} 
+                    isLoggedIn={isLoggedIn}
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
                 ))}
               </div>
             </div>
           )}
           
-          {/* Developer Results */}
           {developerResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -135,13 +198,56 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {developerResults.map((result, index) => (
-                  <ResultCard key={result.id} result={result} index={index} />
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index} 
+                    isLoggedIn={isLoggedIn}
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
                 ))}
               </div>
             </div>
           )}
           
-          {/* Blog Results */}
+          {nowCreateResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Now Create Resources
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {nowCreateResults.map((result, index) => (
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index}
+                    isLoggedIn={isLoggedIn} 
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {youtubeResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                YouTube Videos
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {youtubeResults.map((result, index) => (
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index}
+                    isLoggedIn={isLoggedIn} 
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
           {blogResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -149,13 +255,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {blogResults.map((result, index) => (
-                  <ResultCard key={result.id} result={result} index={index} />
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index}
+                    isLoggedIn={isLoggedIn} 
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
                 ))}
               </div>
             </div>
           )}
           
-          {/* GitHub Results */}
           {githubResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -163,20 +274,27 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {githubResults.map((result, index) => (
-                  <ResultCard key={result.id} result={result} index={index} />
+                  <ResultCard 
+                    key={result.id} 
+                    result={result} 
+                    index={index}
+                    isLoggedIn={isLoggedIn} 
+                    onLoginRequired={() => setNeedsLogin(true)}
+                  />
                 ))}
               </div>
             </div>
           )}
           
-          {/* Other uncategorized results */}
           {results.filter(r => 
             !r.isPredefined && 
             r.source !== 'documentation' && 
             r.source !== 'community' && 
             r.source !== 'devsite' && 
             r.source !== 'blog' &&
-            r.source !== 'github'
+            r.source !== 'github' &&
+            r.source !== 'nowcreate' &&
+            r.source !== 'youtube'
           ).length > 0 && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-gray-700 mb-3">
@@ -190,10 +308,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
                     r.source !== 'community' && 
                     r.source !== 'devsite' && 
                     r.source !== 'blog' &&
-                    r.source !== 'github'
+                    r.source !== 'github' &&
+                    r.source !== 'nowcreate' &&
+                    r.source !== 'youtube'
                   )
                   .map((result, index) => (
-                    <ResultCard key={result.id} result={result} index={index} />
+                    <ResultCard 
+                      key={result.id} 
+                      result={result} 
+                      index={index}
+                      isLoggedIn={isLoggedIn} 
+                      onLoginRequired={() => setNeedsLogin(true)}
+                    />
                   ))}
               </div>
             </div>
@@ -205,7 +331,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
             {results
               .filter(result => result.categories.some(cat => cat.type === 'product'))
               .map((result, index) => (
-                <ResultCard key={result.id} result={result} index={index} />
+                <ResultCard 
+                  key={result.id} 
+                  result={result} 
+                  index={index}
+                  isLoggedIn={isLoggedIn} 
+                  onLoginRequired={() => setNeedsLogin(true)}
+                />
               ))}
           </div>
         </TabsContent>
@@ -215,7 +347,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
             {results
               .filter(result => result.categories.some(cat => cat.type === 'persona'))
               .map((result, index) => (
-                <ResultCard key={result.id} result={result} index={index} />
+                <ResultCard 
+                  key={result.id} 
+                  result={result} 
+                  index={index}
+                  isLoggedIn={isLoggedIn} 
+                  onLoginRequired={() => setNeedsLogin(true)}
+                />
               ))}
           </div>
         </TabsContent>
@@ -225,11 +363,23 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
             {results
               .filter(result => result.categories.some(cat => cat.type === 'usecase'))
               .map((result, index) => (
-                <ResultCard key={result.id} result={result} index={index} />
+                <ResultCard 
+                  key={result.id} 
+                  result={result} 
+                  index={index}
+                  isLoggedIn={isLoggedIn} 
+                  onLoginRequired={() => setNeedsLogin(true)}
+                />
               ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={handleCloseLoginModal} 
+        onSuccess={onLoginSuccess} 
+      />
     </div>
   );
 };
