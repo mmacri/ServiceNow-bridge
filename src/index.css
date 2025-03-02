@@ -1,3 +1,6 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 212 84% 42%; /* ServiceNow blue */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -30,7 +33,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 212 84% 42%; /* ServiceNow blue */
 
     --radius: 0.5rem;
 
@@ -96,6 +99,79 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Smooth scrolling for the entire page */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Glass effect for cards */
+  .glass {
+    @apply bg-white bg-opacity-70 backdrop-blur-lg border border-white border-opacity-20 shadow-lg;
+  }
+  
+  /* Hover effect for cards */
+  .hover-lift {
+    @apply transition-all duration-300 ease-in-out hover:translate-y-[-5px] hover:shadow-lg;
+  }
+  
+  /* Button animation */
+  .button-pulse {
+    @apply relative overflow-hidden transition-all duration-300 ease-in-out;
+  }
+  
+  .button-pulse::after {
+    @apply content-[''] absolute top-0 left-0 h-full w-full bg-white opacity-0 transition-opacity duration-500 ease-in-out;
+    animation: pulse 1.5s infinite;
+  }
+  
+  /* Search bar focus ring animation */
+  .search-focus-ring {
+    @apply ring-offset-background transition-all duration-300 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2;
+  }
+  
+  /* Staggered animation for lists */
+  .staggered-list > * {
+    @apply opacity-0;
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  .staggered-list > *:nth-child(1) { animation-delay: 0.1s; }
+  .staggered-list > *:nth-child(2) { animation-delay: 0.2s; }
+  .staggered-list > *:nth-child(3) { animation-delay: 0.3s; }
+  .staggered-list > *:nth-child(4) { animation-delay: 0.4s; }
+  .staggered-list > *:nth-child(5) { animation-delay: 0.5s; }
+  .staggered-list > *:nth-child(6) { animation-delay: 0.6s; }
+  .staggered-list > *:nth-child(7) { animation-delay: 0.7s; }
+  .staggered-list > *:nth-child(8) { animation-delay: 0.8s; }
+  .staggered-list > *:nth-child(9) { animation-delay: 0.9s; }
+  .staggered-list > *:nth-child(10) { animation-delay: 1s; }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
