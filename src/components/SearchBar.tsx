@@ -4,6 +4,37 @@ import { Search, Mic, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 
+// Add TypeScript interface for the SpeechRecognition API
+interface SpeechRecognitionEvent {
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+  error?: any;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: any) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
+// Extend Window interface to include Speech Recognition
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionInstance;
+    webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+  }
+}
+
 interface SearchBarProps {
   query: string;
   onSearch: (query: string) => void;
@@ -34,16 +65,21 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLogge
   
   const handleVoiceSearch = () => {
     // Check if Speech Recognition is available
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (!window.webkitSpeechRecognition && !window.SpeechRecognition) {
       toast.error('Voice search is not supported in your browser');
       return;
     }
     
-    // This is a simple implementation, in a real app we'd use proper types
-    // and possibly a library to handle browser compatibility
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      // Use the appropriate SpeechRecognition constructor
+      const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognitionConstructor) {
+        toast.error('Voice search is not supported in your browser');
+        return;
+      }
+      
+      const recognition = new SpeechRecognitionConstructor();
       
       recognition.lang = 'en-US';
       recognition.interimResults = false;
@@ -51,7 +87,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLogge
       
       setIsListening(true);
       
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const speechResult = event.results[0][0].transcript;
         setLocalQuery(speechResult);
         onSearch(speechResult);
