@@ -13,11 +13,13 @@ export function useSearch() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [needsLogin, setNeedsLogin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchSources, setSearchSources] = useState<any[]>([]);
 
-  // Check login status on mount
+  // Get search sources and check login status on mount
   useEffect(() => {
     const dataService = ServiceNowDataService.getInstance();
     setIsLoggedIn(dataService.isLoggedIn());
+    setSearchSources(dataService.getSearchSources());
   }, []);
 
   // Debounce the search query to avoid excessive API calls
@@ -121,6 +123,10 @@ export function useSearch() {
       // Slightly delay the search to allow login state to propagate
       setTimeout(() => handleSearch(debouncedQuery), 100);
     }
+    
+    // Update search sources as they might change based on login status
+    const dataService = ServiceNowDataService.getInstance();
+    setSearchSources(dataService.getSearchSources());
   }, [debouncedQuery, handleSearch]);
 
   const handleLogout = useCallback(() => {
@@ -133,6 +139,9 @@ export function useSearch() {
     if (debouncedQuery) {
       handleSearch(debouncedQuery);
     }
+    
+    // Update search sources as they might change based on login status
+    setSearchSources(dataService.getSearchSources());
   }, [debouncedQuery, handleSearch]);
 
   return {
@@ -146,7 +155,8 @@ export function useSearch() {
     setNeedsLogin,
     isLoggedIn,
     handleLoginSuccess,
-    handleLogout
+    handleLogout,
+    searchSources
   };
 }
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Search, Mic, X } from 'lucide-react';
+import { Search, Mic, X, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 
@@ -40,9 +40,10 @@ interface SearchBarProps {
   onSearch: (query: string) => void;
   onClear: () => void;
   isLoggedIn: boolean;
+  onLogout?: () => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLoggedIn }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLoggedIn, onLogout }) => {
   const [localQuery, setLocalQuery] = useState(query);
   const [isFocused, setIsFocused] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -112,6 +113,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLogge
     }
   };
 
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+      toast.success('Successfully logged out');
+    }
+  };
+
   return (
     <div className={`w-full max-w-3xl mx-auto transition-all ${isFocused ? 'scale-105' : ''}`}>
       <form onSubmit={handleSubmit} className="relative">
@@ -164,11 +172,27 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch, onClear, isLogge
         </div>
       </form>
       
-      {isLoggedIn && (
-        <div className="mt-2 text-xs text-right text-green-600 font-medium">
-          Logged in • Additional premium content available
-        </div>
-      )}
+      <div className="mt-2 flex justify-between items-center">
+        {isLoggedIn ? (
+          <div className="flex items-center">
+            <span className="text-xs text-green-600 font-medium mr-2">
+              Logged in • Additional premium content available
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="text-xs text-gray-500 hover:text-red-500 flex items-center"
+            >
+              <LogOut size={14} className="mr-1" /> Logout
+            </Button>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500">
+            Log in to access additional content sources
+          </div>
+        )}
+      </div>
     </div>
   );
 };

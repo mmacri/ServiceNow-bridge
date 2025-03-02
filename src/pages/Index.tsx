@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import SearchResults from '../components/SearchResults';
 import useSearch from '../hooks/useSearch';
+import SourcesDirectory from '../components/SourcesDirectory';
 
 const Index = () => {
   const { 
@@ -16,8 +17,11 @@ const Index = () => {
     setNeedsLogin,
     isLoggedIn,
     handleLoginSuccess,
-    handleLogout
+    handleLogout,
+    searchSources
   } = useSearch();
+
+  const [showSourcesDirectory, setShowSourcesDirectory] = useState(false);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -26,13 +30,26 @@ const Index = () => {
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Get instant answers to your ServiceNow questions from documentation, community, blogs, and more.
         </p>
+        <div className="mt-2">
+          <button 
+            onClick={() => setShowSourcesDirectory(!showSourcesDirectory)}
+            className="text-sm text-servicenow-blue hover:underline"
+          >
+            {showSourcesDirectory ? 'Hide' : 'Show'} Sources Directory
+          </button>
+        </div>
       </div>
+      
+      {showSourcesDirectory && (
+        <SourcesDirectory sources={searchSources} />
+      )}
       
       <SearchBar 
         query={query} 
         onSearch={handleSearch} 
         onClear={clearSearch}
         isLoggedIn={isLoggedIn}
+        onLogout={handleLogout}
       />
       
       {error && (

@@ -1,69 +1,70 @@
-# Welcome to your Lovable project
 
-## Project info
+# ServiceNow Knowledge Assistant
 
-**URL**: https://lovable.dev/projects/0b3859c2-0f36-44df-b85e-91dd8ac5a433
+A comprehensive search tool that provides on-demand information about ServiceNow products, best practices, use cases, and development guidance.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Search across multiple ServiceNow knowledge sources
+- Voice search capabilities
+- Authentication for accessing restricted content
+- Categorization by product, persona, and use case
+- Responsive design for desktop and mobile
 
-**Use Lovable**
+## Local Development
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0b3859c2-0f36-44df-b85e-91dd8ac5a433) and start prompting.
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm run dev
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+## Deployment to GitHub Pages
 
-**Use your preferred IDE**
+### Automatic Deployment (GitHub Actions)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This repository includes a GitHub Actions workflow that automatically deploys to GitHub Pages when you push to the main branch.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Push your changes to the main branch
+2. GitHub Actions will build and deploy to the gh-pages branch
+3. Your site will be available at `https://[username].github.io/[repository-name]/`
 
-Follow these steps:
+### Manual Deployment
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+You can also deploy manually using the included script:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+chmod +x deploy-to-github.sh
+./deploy-to-github.sh
 ```
 
-**Edit a file directly in GitHub**
+### Configuring for Custom Domain
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Add your domain in the GitHub repository settings
+2. Create a CNAME record with your DNS provider pointing to `[username].github.io`
+3. Uncomment and update the CNAME file creation in the deploy script
 
-**Use GitHub Codespaces**
+## Knowledge Sources
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This assistant searches and aggregates results from:
 
-## What technologies are used for this project?
+- ServiceNow Documentation
+- ServiceNow Community
+- ServiceNow Developer Portal
+- ServiceNow Blog
+- ServiceNow Now Create (requires login)
+- ServiceNow GitHub repositories
+- ServiceNow YouTube videos
+- ServiceNow TechNotes (requires login)
 
-This project is built with .
+## Authentication
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Some content sources require ServiceNow authentication. The application allows users to log in to access these sources, but credentials are not stored - they are only used for the current session.
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/0b3859c2-0f36-44df-b85e-91dd8ac5a433) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Contributions are welcome! Please feel free to submit a Pull Request.
