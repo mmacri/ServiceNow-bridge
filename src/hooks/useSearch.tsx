@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SearchResult } from '../types/search';
 import { performSearch } from '../utils/searchUtils';
+import ServiceNowDataService from '../services/ServiceNowDataService';
 
 export function useSearch() {
   const [query, setQuery] = useState('');
@@ -33,8 +34,24 @@ export function useSearch() {
       setError(null);
 
       try {
-        const searchResults = await performSearch(debouncedQuery);
-        setResults(searchResults);
+        // Get predefined results from local data first
+        const predefinedResults = await performSearch(debouncedQuery);
+        
+        // Then fetch from external sources using our service
+        const dataService = ServiceNowDataService.getInstance();
+        const externalResults = await dataService.searchAll(debouncedQuery);
+        
+        // Combine results, ensuring predefined ones come first
+        const combinedResults = [
+          ...predefinedResults,
+          ...externalResults.filter(extResult => 
+            !predefinedResults.some(preResult => 
+              preResult.title.toLowerCase() === extResult.title.toLowerCase()
+            )
+          )
+        ];
+        
+        setResults(combinedResults);
       } catch (err) {
         console.error('Search error:', err);
         setError('Failed to perform search. Please try again.');

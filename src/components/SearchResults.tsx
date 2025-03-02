@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SearchResult } from '../types/search';
 import ResultCard from './ResultCard';
@@ -18,7 +17,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
     return (
       <div className="w-full max-w-4xl mx-auto mt-8 flex flex-col items-center justify-center h-40">
         <div className="h-8 w-8 rounded-full border-2 border-servicenow-blue border-t-transparent animate-spin"></div>
-        <p className="mt-4 text-gray-500">Searching ServiceNow knowledge...</p>
+        <p className="mt-4 text-gray-500">Searching ServiceNow knowledge sources...</p>
+        <p className="mt-2 text-sm text-gray-400">Querying documentation, community, developer resources, blogs and GitHub...</p>
       </div>
     );
   }
@@ -47,6 +47,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
     return null; // Don't show anything if no search has been performed yet
   }
 
+  // Group results by source type
+  const predefinedResults = results.filter(result => result.isPredefined);
+  const documentationResults = results.filter(result => !result.isPredefined && result.source === 'documentation');
+  const communityResults = results.filter(result => !result.isPredefined && result.source === 'community');
+  const developerResults = results.filter(result => !result.isPredefined && result.source === 'devsite');
+  const blogResults = results.filter(result => !result.isPredefined && result.source === 'blog');
+  const githubResults = results.filter(result => !result.isPredefined && result.source === 'github');
+
   return (
     <div className="w-full max-w-4xl mx-auto mt-8 animate-fade-in">
       <div className="flex justify-between items-center mb-4">
@@ -65,6 +73,21 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
         </div>
       </div>
       
+      {/* Display verified answers at the top if any are found */}
+      {predefinedResults.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <span className="inline-flex items-center justify-center w-6 h-6 bg-servicenow-blue text-white rounded-full text-xs mr-2">✓</span>
+            Verified Answers
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            {predefinedResults.map((result, index) => (
+              <ResultCard key={result.id} result={result} index={index} />
+            ))}
+          </div>
+        </div>
+      )}
+      
       <Tabs defaultValue="all" className="w-full mb-6">
         <TabsList className="bg-gray-100 p-1 rounded-full grid grid-cols-4 max-w-md mx-auto">
           <TabsTrigger value="all" className="rounded-full data-[state=active]:bg-white">All</TabsTrigger>
@@ -74,11 +97,107 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading, query
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {results.map((result, index) => (
-              <ResultCard key={result.id} result={result} index={index} />
-            ))}
-          </div>
+          {/* Results grouped by source */}
+          
+          {/* Documentation Results */}
+          {documentationResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Official Documentation
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {documentationResults.map((result, index) => (
+                  <ResultCard key={result.id} result={result} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Community Results */}
+          {communityResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Community Discussions
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {communityResults.map((result, index) => (
+                  <ResultCard key={result.id} result={result} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Developer Results */}
+          {developerResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Developer Resources
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {developerResults.map((result, index) => (
+                  <ResultCard key={result.id} result={result} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Blog Results */}
+          {blogResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Blog Articles
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {blogResults.map((result, index) => (
+                  <ResultCard key={result.id} result={result} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* GitHub Results */}
+          {githubResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                GitHub Repositories
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {githubResults.map((result, index) => (
+                  <ResultCard key={result.id} result={result} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Other uncategorized results */}
+          {results.filter(r => 
+            !r.isPredefined && 
+            r.source !== 'documentation' && 
+            r.source !== 'community' && 
+            r.source !== 'devsite' && 
+            r.source !== 'blog' &&
+            r.source !== 'github'
+          ).length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-700 mb-3">
+                Other Results
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {results
+                  .filter(r => 
+                    !r.isPredefined && 
+                    r.source !== 'documentation' && 
+                    r.source !== 'community' && 
+                    r.source !== 'devsite' && 
+                    r.source !== 'blog' &&
+                    r.source !== 'github'
+                  )
+                  .map((result, index) => (
+                    <ResultCard key={result.id} result={result} index={index} />
+                  ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="product" className="mt-6">
