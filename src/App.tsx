@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 // Get the base URL from the import.meta.env
-const baseUrl = import.meta.env.BASE_URL;
+const baseUrl = import.meta.env.BASE_URL || '/';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

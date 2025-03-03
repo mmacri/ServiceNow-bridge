@@ -20,6 +20,6 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Set the base path to /ServiceNow-bridge/ for GitHub Pages deployment
+  // Set the base path for GitHub Pages deployment
   base: '/ServiceNow-bridge/',
 }));
