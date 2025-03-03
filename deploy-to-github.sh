@@ -20,20 +20,16 @@ npm run build
 # Create a .nojekyll file to disable Jekyll processing
 touch $BUILD_DIR/.nojekyll
 
-# Create a CNAME file if needed for custom domain (uncomment and edit if needed)
-# echo "your-custom-domain.com" > $BUILD_DIR/CNAME
-
-# Add base element to index.html to handle GitHub Pages subfolder pathing
-# This helps with routing in single-page applications
-echo "Configuring for GitHub Pages deployment..."
-sed -i.bak 's/<head>/<head><base href="\/">/' $BUILD_DIR/index.html
+# Create a copy of index.html as 404.html for SPA routing
+echo "Creating 404.html for SPA routing..."
+cp $BUILD_DIR/index.html $BUILD_DIR/404.html
 
 # Deploy to GitHub Pages
 echo "Deploying to GitHub Pages..."
 npx gh-pages -d $BUILD_DIR
 
 echo "✅ Successfully deployed to GitHub Pages!"
-echo "Your application should be available at: https://[username].github.io/[repository-name]/"
+echo "Your application should be available at: https://mmacri.github.io/ServiceNow-bridge/"
 echo "Note: It might take a few minutes for the changes to be visible."
 echo ""
 echo "If you're using a custom domain:"
