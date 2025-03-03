@@ -31,7 +31,7 @@ jobs:
       - name: Configure for GitHub Pages
         run: |
           touch dist/.nojekyll
-          sed -i.bak 's/<head>/<head><base href="\/">/' dist/index.html
+          cp dist/index.html dist/404.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
