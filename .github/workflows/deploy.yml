@@ -27,11 +27,14 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_BASE_URL: /ServiceNow-bridge/
 
       - name: Configure for GitHub Pages
         run: |
           touch dist/.nojekyll
           cp dist/index.html dist/404.html
+          echo "window.BASE_URL = '/ServiceNow-bridge/';" > dist/base-path.js
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

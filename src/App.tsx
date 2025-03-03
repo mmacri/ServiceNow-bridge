@@ -12,6 +12,9 @@ const queryClient = new QueryClient();
 // Get the base URL from the import.meta.env
 const baseUrl = import.meta.env.BASE_URL || '/';
 
+// Log the base URL to help with debugging
+console.log("Base URL:", baseUrl);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

@@ -4,15 +4,22 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Ensure the DOM is fully loaded before rendering
-const root = document.getElementById('root');
+// Add this for debugging
+console.log("Main.tsx is executing");
 
-if (!root) {
-  console.error('Root element not found');
-} else {
-  createRoot(root).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-}
+// Ensure the DOM is fully loaded before rendering
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("DOM is loaded, rendering app");
+  const root = document.getElementById('root');
+
+  if (!root) {
+    console.error('Root element not found');
+  } else {
+    console.log("Found root element, rendering React app");
+    createRoot(root).render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+  }
+});

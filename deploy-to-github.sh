@@ -15,7 +15,7 @@ npm install
 
 # Build the application for production
 echo "Building application..."
-npm run build
+VITE_BASE_URL="/ServiceNow-bridge/" npm run build
 
 # Create a .nojekyll file to disable Jekyll processing
 touch $BUILD_DIR/.nojekyll
@@ -23,6 +23,9 @@ touch $BUILD_DIR/.nojekyll
 # Create a copy of index.html as 404.html for SPA routing
 echo "Creating 404.html for SPA routing..."
 cp $BUILD_DIR/index.html $BUILD_DIR/404.html
+
+# Add a script to set the base path
+echo "window.BASE_URL = '/ServiceNow-bridge/';" > $BUILD_DIR/base-path.js
 
 # Deploy to GitHub Pages
 echo "Deploying to GitHub Pages..."
